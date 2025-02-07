@@ -114,9 +114,8 @@ jobs:
 
       - name: Run scanner
         run: |
-          cd scanner
           docker run \
-              -v ./certs:/etc/scanner/certs \
-              -v ./config.yaml:/etc/scanner/config.yaml \
+              -v $(readlink -f scanner/certs):/etc/scanner/certs \
+              -v $(readline -f scanner/config.yaml):/etc/scanner/config.yaml \
               quay.io/stackrox-io/scanner-v4:4.7.x-296-g8a25807280 \
               --conf /etc/scanner/config.yaml
