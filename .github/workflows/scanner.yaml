@@ -109,11 +109,15 @@ jobs:
           EOF
           cat /scanner_data/config.yaml
 
+      - name: Get GitHub Actions Network
+        run: echo "GITHUB_NETWORK=$(docker network ls --format '{{.Name}}' | grep github)" >> $GITHUB_ENV
+
       - name: Run scanner
         run: |
           chmod -R 777 /scanner_data/certs
           chmod 666 /scanner_data/config.yaml
           docker run \
+              --network=${{ env.GITHUB_NETWORK }} \
               -v /tmp/scanner_data/certs:/scanner/certs \
               -v /tmp/scanner_data/config.yaml:/scanner/config.yaml \
               quay.io/stackrox-io/scanner-v4:4.7.x-296-g8a25807280 \
