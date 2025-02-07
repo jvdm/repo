@@ -30,8 +30,6 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.4
     env:
       POSTGRESQL_USER: scanner
       POSTGRESQL_DATABASE: scanner
@@ -116,9 +114,9 @@ jobs:
       - name: Run scanner
         run: |
           echo $(readlink -f scanner/certs)
-          ls -l scanner/certs
           echo $(readlink -f config)
           ls -l config
+          ls -l scanner/certs
           docker run \
               -v $(readlink -f scanner/certs):/scanner/certs \
               -v $(readlink -f config):/scanner/config \
