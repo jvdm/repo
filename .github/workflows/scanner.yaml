@@ -31,6 +31,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
+      POSTGRESQL_HOST: localhost
       POSTGRESQL_USER: scanner
       POSTGRESQL_DATABASE: scanner
       POSTGRESQL_PASSWORD: scanner
@@ -58,7 +59,7 @@ jobs:
         run: |
           PGPASSWORD="$POSTGRESQL_PASSWORD" \
               psql \
-                  -h postgresql \
+                  -h "$POSTGRESQL_HOST" \
                   -U "$POSTGRESQL_USER" \
                   -d "$POSTGRESQL_DATABASE" \
                   -c "SELECT 1"
@@ -95,7 +96,7 @@ jobs:
           indexer:
             enable: true
             database:
-              conn_string: "host=postgresql port=5432 user=$POSTGRESQL_USER password=$POSTGRESQL_PASSWORD database=$POSTGRESQL_DATABASE
+              conn_string: "host=$POSTGRESQL_HOST port=5432 user=$POSTGRESQL_USER password=$POSTGRESQL_PASSWORD database=$POSTGRESQL_DATABASE
               password_file: ""
             get_layer_timeout: 1m
             repository_to_cpe_url: https://security.access.redhat.com/data/metrics/repository-to-cpe.json
@@ -103,7 +104,7 @@ jobs:
           matcher:
             enable: true
             database:
-              conn_string: "host=postgresql port=5432 user=$POSTGRESQL_USER password=$POSTGRESQL_PASSWORD database=$POSTGRESQL_DATABASE
+              conn_string: "host=$POSTGRESQL_HOST port=5432 user=$POSTGRESQL_USER password=$POSTGRESQL_PASSWORD database=$POSTGRESQL_DATABASE
             vulnerabilities_url: https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip
           mtls:
             certs_dir: /scanner/certs/scanner-v4
