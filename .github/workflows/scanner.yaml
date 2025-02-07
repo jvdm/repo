@@ -111,8 +111,8 @@ jobs:
 
       - name: Run scanner
         run: |
-          chmod -R 777 /scanner/certs
-          chmod 666 /scanner/config.yaml
+          chmod -R 777 /scanner_data/certs
+          chmod 666 /scanner_data/config.yaml
           docker run \
               -v /tmp/scanner_data/certs:/scanner/certs \
               -v /tmp/scanner_data/config.yaml:/scanner/config.yaml \
