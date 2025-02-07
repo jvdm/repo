@@ -30,6 +30,10 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.4
+      volumes:
+        - /tmp/scanner_data:/scanner_data
     env:
       POSTGRESQL_HOST: localhost
       POSTGRESQL_USER: scanner
@@ -79,18 +83,12 @@ jobs:
         run: |
           cd scanner
           make certs
-          # Setup permissions so the scanner container can read the certs.
-          rm certs/scanner-v4/ca.pem
-          rm certs/scanner-v4/ca-key.pem
-          cp certs/ca/root.pem certs/scanner-v4/ca.pem
-          cp certs/ca/key.pem certs/scanner-v4/ca-key.pem
-          chmod -R o+r certs
+          cp -RL certs /scanner_data/certs
 
       - name: Make config
         run: |
-          mkdir config
-          chmod 777 config
-          cat >config/config.yaml <<EOF
+          mkdir /scanner_data/config
+          cat >/scanner_data/config.yaml <<EOF
           http_listen_addr: 127.0.0.1:9443
           grpc_listen_addr: 127.0.0.1:8443
           indexer:
@@ -109,16 +107,14 @@ jobs:
             certs_dir: /scanner/certs/scanner-v4
           log_level: info          
           EOF
-          cat config/config.yaml
+          cat /scanner_data/config.yaml
 
       - name: Run scanner
         run: |
-          echo $(readlink -f scanner/certs)
-          echo $(readlink -f config)
-          ls -l config
-          ls -l scanner/certs
+          chmod -R 777 /scanner/certs
+          chmod 666 /scanner/config.yaml
           docker run \
-              -v $(readlink -f scanner/certs):/scanner/certs \
-              -v $(readlink -f config):/scanner/config \
+              -v /tmp/scanner_data/certs:/scanner/certs \
+              -v /tmp/scanner_data/config.yaml:/scanner/config.yaml \
               quay.io/stackrox-io/scanner-v4:4.7.x-296-g8a25807280 \
-              --conf /scanner/config/config.yaml
+              --conf /scanner/config.yaml
