@@ -81,10 +81,6 @@ jobs:
           cp certs/ca/key.pem certs/scanner-v4/ca-key.pem
           chmod -R o+r certs
 
-      - name: Make scannerctl
-        run: |
-          make -C scanner bin/scannerctl
-
       - name: Make config
         run: |
           cat >config.yaml <<EOF
