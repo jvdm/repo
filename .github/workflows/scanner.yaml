@@ -5,36 +5,44 @@ on:
   - pull_request
 
 jobs:
-  images:
-    runs-on: ubuntu-latest
-    env:
-      REGISTRY: quay.io/stackrox-io
-      IMAGE_POLL_INTERVAL_S: 10
-      IMAGE_POLL_RETRIES: 3
+  # images:
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     REGISTRY: quay.io/stackrox-io
+  #     IMAGE_POLL_INTERVAL_S: 10
+  #     IMAGE_POLL_RETRIES: 3
 
-    steps:
-      - name: Poll for Scanner Image Availability
-        run: |
-          for _ in $(seq 1 "$IMAGE_POLL_RETRIES"); do
-              (
-                  skopeo inspect docker://$REGISTRY/scanner-v4:4.7.x-655-g2d758baa73
-                  skopeo inspect docker://$REGISTRY/scanner-v4-db:4.7.x-655-g2d758baa73
-              ) && exit 0
-              sleep "$IMAGE_POLL_INTERVAL_S"
-          done
-          echo "Image(s) not found"
-          exit 1
+  #   steps:
+  #     - name: Poll for Scanner Image Availability
+  #       run: |
+  #         imgs=(
+  #             "https://quay.io/v2/stackrox-io/scanner-v4/manifests/$IMAGE_TAG"
+  #             "https://quay.io/v2/stackrox-io/scanner-v4-db/manifests/$IMAGE_TAG"
+  #         )
+  #         curl --fail \
+  #              --show-error \
+  #              --retry "$IMAGE_POLL_RETRIES" \
+  #              --retry-delay "$IMAGE_POLL_INTERVAL_S" \
+  #              "${urls[@]}" \
+  #         && exit 0
+  #         echo "Image(s) not found"
+  #         exit 1
 
   test:
     runs-on: ubuntu-latest
-
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.4
+    env:
+      POSTGRESQL_USER: scanner
+      POSTGRESQL_DATABASE: scanner
+      POSTGRESQL_PASSWORD: scanner
     services:
-      postgres:
+      postgresql:
         image: registry.redhat.io/rhel8/postgresql-13
         env:
-          POSTGRESQL_USER: scanner
-          POSTGRESQL_DATABASE: scanner
-          POSTGRESQL_PASSWORD: scanner
+          POSTGRESQL_USER: ${{ env.POSTGRESQL_USER }}
+          POSTGRESQL_DATABASE: ${{ env.POSTGRESQL_DATABASE }}
+          POSTGRESQL_PASSWORD: ${{ env.POSTGRESQL_PASSWORD }}
         ports:
           - 5432:5432
         credentials:
@@ -54,3 +62,54 @@ jobs:
       - name: Dump PostgreSQL Logs on Failure
         if: failure() && steps.check-db.outcome == 'failure'
         run: docker logs ${{ job.services.postgres.id }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: stackrox/stackrox
+          fetch-depth: 0
+          ref: master
+
+      - name: Make certs
+        run: |
+          cd scanner
+          make certs
+          cp certs/ca/root.pem cp certs/scanner-v4/ca.pem
+          cp certs/ca/key.pem cp certs/scanner-v4/ca-key.pem
+          chmod -R o+r certs
+
+      - name: Make scannerctl
+        run: |
+          make -C scanner bin/scannerctl
+
+      - name: Make config
+        run: |
+          cat >config.yaml <<EOF
+          http_listen_addr: 127.0.0.1:9443
+          grpc_listen_addr: 127.0.0.1:8443
+          indexer:
+            enable: true
+            database:
+              conn_string: "host=postgresql port=5432 user=scanner password=scanner database=scanner"
+              password_file: ""
+            get_layer_timeout: 1m
+            repository_to_cpe_url: https://security.access.redhat.com/data/metrics/repository-to-cpe.json
+            name_to_repos_url: https://security.access.redhat.com/data/metrics/container-name-repos-map.json
+          matcher:
+            enable: true
+            database:
+              conn_string: "host=postgresql port=5432 user=scanner password=scanner database=scanner"
+            vulnerabilities_url: https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip
+          mtls:
+            certs_dir: /etc/scanner/certs/scanner-v4
+          log_level: info          
+          EOF
+
+      - name: Run scanner
+        run: |
+          cd scanner
+          docker run \
+              -v ./certs:/etc/scanner/certs \
+              -v ./config.yaml:/etc/scanner/config.yaml \
+              quay.io/stackrox-io/scanner-v4:4.7.x-296-g8a25807280 \
+              --conf /etc/scanner/config.yaml
