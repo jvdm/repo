@@ -96,7 +96,7 @@ jobs:
           indexer:
             enable: true
             database:
-              conn_string: "host=postgresql port=5432 user=$POSTGRESQL_USER password=$POSTGRESQL_PASSWORD database=POSTGRESQL_DATABASE
+              conn_string: "host=postgresql port=5432 user=$POSTGRESQL_USER password=$POSTGRESQL_PASSWORD database=$POSTGRESQL_DATABASE
               password_file: ""
             get_layer_timeout: 1m
             repository_to_cpe_url: https://security.access.redhat.com/data/metrics/repository-to-cpe.json
@@ -104,7 +104,7 @@ jobs:
           matcher:
             enable: true
             database:
-              conn_string: "host=postgresql port=5432 user=$POSTGRESQL_USER password=$POSTGRESQL_PASSWORD database=POSTGRESQL_DATABASE
+              conn_string: "host=postgresql port=5432 user=$POSTGRESQL_USER password=$POSTGRESQL_PASSWORD database=$POSTGRESQL_DATABASE
             vulnerabilities_url: https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip
           mtls:
             certs_dir: /etc/scanner/certs/scanner-v4
