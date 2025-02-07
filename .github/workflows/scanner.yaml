@@ -108,15 +108,19 @@ jobs:
               conn_string: "host=postgresql port=5432 user=$POSTGRESQL_USER password=$POSTGRESQL_PASSWORD database=$POSTGRESQL_DATABASE
             vulnerabilities_url: https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip
           mtls:
-            certs_dir: /etc/scanner/certs/scanner-v4
+            certs_dir: /scanner/certs/scanner-v4
           log_level: info          
           EOF
           cat config/config.yaml
 
       - name: Run scanner
         run: |
+          echo $(readlink -f scanner/certs)
+          ls -l scanner/certs
+          echo $(readlink -f config)
+          ls -l config
           docker run \
-              -v $(readlink -f scanner/certs):/etc/scanner/certs \
-              -v $(readlink -f config):/etc/scanner/config \
+              -v $(readlink -f scanner/certs):/scanner/certs \
+              -v $(readlink -f config):/scanner/config \
               quay.io/stackrox-io/scanner-v4:4.7.x-296-g8a25807280 \
-              --conf /etc/scanner/config/config.yaml
+              --conf /scanner/config/config.yaml
