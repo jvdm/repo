@@ -35,7 +35,7 @@ jobs:
       volumes:
         - /tmp/scanner_data:/scanner_data
     env:
-      POSTGRESQL_HOST: localhost
+      POSTGRESQL_HOST: postgresql
       POSTGRESQL_USER: scanner
       POSTGRESQL_DATABASE: scanner
       POSTGRESQL_PASSWORD: scanner
