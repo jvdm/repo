@@ -89,8 +89,9 @@ jobs:
 
       - name: Make config
         run: |
-          cd scanner
-          cat >config.yaml <<EOF
+          mkdir config
+          chmod 777 config
+          cat >config/config.yaml <<EOF
           http_listen_addr: 127.0.0.1:9443
           grpc_listen_addr: 127.0.0.1:8443
           indexer:
@@ -110,12 +111,12 @@ jobs:
             certs_dir: /etc/scanner/certs/scanner-v4
           log_level: info          
           EOF
-          cat config.yaml
+          cat config/config.yaml
 
       - name: Run scanner
         run: |
           docker run \
               -v $(readlink -f scanner/certs):/etc/scanner/certs \
-              -v $(readlink -f scanner/config.yaml):/etc/scanner/config.yaml \
+              -v $(readlink -f config):/etc/scanner/config \
               quay.io/stackrox-io/scanner-v4:4.7.x-296-g8a25807280 \
-              --conf /etc/scanner/config.yaml
+              --conf /etc/scanner/config/config.yaml
