@@ -74,8 +74,11 @@ jobs:
         run: |
           cd scanner
           make certs
-          cp certs/ca/root.pem cp certs/scanner-v4/ca.pem
-          cp certs/ca/key.pem cp certs/scanner-v4/ca-key.pem
+          # Setup permissions so the scanner container can read the certs.
+          rm certs/scanner-v4/ca.pem
+          rm certs/scanner-v4/ca-key.pem
+          cp certs/ca/root.pem certs/scanner-v4/ca.pem
+          cp certs/ca/key.pem certs/scanner-v4/ca-key.pem
           chmod -R o+r certs
 
       - name: Make scannerctl
